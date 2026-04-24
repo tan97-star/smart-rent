@@ -1,6 +1,6 @@
 /**
- * SMARTRENT AI | VERSION 5.0.0 (SYSTEM ANALYSIS VERSION)
- * FEATURE: Detailed Profile Header & Z.AI Smart System Analysis
+ * SMARTRENT AI | VERSION 5.5.0 (PREMIUM UI & SYNC)
+ * IMPROVEMENTS: Header Scaling, High-Contrast Fonts, & Chat-Sync Logic
  */
 
 let adCounter = 1;
@@ -10,54 +10,51 @@ const GOOGLE_PROXY_URL = "https://script.google.com/macros/s/AKfycbyTlrixa43Psv9
 
 // 1. DYNAMIC UI: ADD AD
 window.addRentalAd = function () {
-    if (adCounter >= 5) return alert("Limit 5 ads for demo.");
+    if (adCounter >= 5) return alert("Limit 5 ads.");
     adCounter++;
     const container = document.getElementById("ads-dynamic-list");
     const div = document.createElement("div");
-    div.className = "ad-entry flex items-center gap-3 bg-slate-50/80 p-3 rounded-xl border border-slate-100 mb-2";
+    div.className = "ad-entry animate-fadeIn flex items-center gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200 mb-2 shadow-sm";
     div.innerHTML = `
-        <span class="text-[10px] font-black text-slate-400 w-8">#0${adCounter}</span>
-        <input class="ad-input flex-1 border-none bg-transparent outline-none text-sm font-medium" placeholder="Paste listing details...">
-        <button onclick="this.parentElement.remove(); adCounter--;" class="text-red-400 hover:text-red-600 text-xs font-bold">✕</button>
+        <span class="text-[12px] font-black text-slate-400">#0${adCounter}</span>
+        <input class="ad-input flex-1 border-none bg-transparent outline-none text-sm font-bold text-slate-700" placeholder="Paste details here...">
+        <button onclick="this.parentElement.remove(); adCounter--;" class="text-red-400 hover:text-red-600 font-bold">✕</button>
     `;
     container.appendChild(div);
 };
 
-// 2. CORE EVALUATION ENGINE (3 TRANSPORT MODES)
-function evaluateRentalOption(propertyRaw, profile) {
+// 2. CORE EVALUATION ENGINE
+function evaluateRentalOption(propertyRaw, profile, isChatUpdate = false) {
     const rent = parseFloat(propertyRaw.monthly_rent) || 0;
     const distance = parseFloat(propertyRaw.estimated_distance_km) || 0;
     
-    // TRANSPORTATION LOGIC (3 CONDITIONS)
+    // Transport Calculation Logic
     let transportCost = 0;
     if (profile.transportMode === "Car") {
-        transportCost = Math.round(distance * 0.65 * 2 * 22 + 70); // Fuel + Toll + Parking
+        transportCost = Math.round(distance * 0.65 * 2 * 22 + 70); 
     } else if (profile.transportMode === "Public Transport") {
-        transportCost = Math.round(Math.min(11, distance * 0.45 + 2) * 22); // My50/LRT logic
-    } else if (profile.transportMode === "Walk") {
-        transportCost = 20; // Maintenance (Shoes/Umbrella)
+        transportCost = Math.round(Math.min(11, distance * 0.45 + 2) * 22);
+    } else {
+        transportCost = 20; 
     }
 
     const totalMonthlyCost = rent + transportCost + profile.commitments;
     const balance = profile.salary - totalMonthlyCost;
-    const deposit1plus1 = rent * 2; // NORMAL DEPO 1+1
+    const deposit1plus1 = rent * 2;
 
-    // Z-AI SYSTEM ANALYSIS LOGIC
+    // Z-AI SYSTEM ANALYSIS
     let aiStatus = "PASSED";
     let aiComment = "";
 
     if (balance < 500) {
         aiStatus = "RISK";
-        aiComment = "Z.AI: Critical financial risk. Living costs consume too much of your buffer.";
+        aiComment = "Z.AI: Critical financial risk. Disposable income is too low for sustainability.";
     } else if (deposit1plus1 > profile.depositBudget) {
         aiStatus = "CAUTION";
-        aiComment = "Z.AI: Deposit barrier detected. You need RM " + (deposit1plus1 - profile.depositBudget) + " more for the upfront 1+1 payment.";
-    } else if (rent > (profile.salary * 0.35)) {
-        aiStatus = "CAUTION";
-        aiComment = "Z.AI: Rent exceeds 35% rule. Sustainable, but limits your savings potential.";
+        aiComment = `Z.AI: Deposit barrier! You're RM ${deposit1plus1 - profile.depositBudget} short for the 1+1 upfront.`;
     } else {
         aiStatus = "PASSED";
-        aiComment = "Z.AI: Optimal choice. High disposable buffer maintained for your lifestyle.";
+        aiComment = isChatUpdate ? "Z.AI: Negotiated price accepted! This is now a top-tier sustainable choice." : "Z.AI: Optimal match for your profile and location.";
     }
 
     return {
@@ -80,12 +77,12 @@ window.runSmartAnalysis = async function () {
         salary: parseFloat(document.getElementById("salary").value) || 0,
         commitments: parseFloat(document.getElementById("commitments").value) || 0,
         depositBudget: parseFloat(document.getElementById("deposit_budget").value) || 0,
-        workplace: document.getElementById("workplace").value.trim(),
+        workplace: document.getElementById("workplace").value.trim() || "TRX",
         transportMode: document.getElementById("transport_mode").value
     };
 
     const inputs = Array.from(document.querySelectorAll(".ad-input")).map(i => i.value).filter(v => v);
-    if (!userProfile.salary || !userProfile.workplace || inputs.length === 0) return alert("Fill all fields.");
+    if (!userProfile.salary || inputs.length === 0) return alert("Fill form first.");
 
     document.getElementById("loadingOverlay").style.display = "flex";
 
@@ -95,7 +92,7 @@ window.runSmartAnalysis = async function () {
             body: JSON.stringify({
                 model: "ilmu-glm-5.1",
                 messages: [
-                    { role: "system", content: "Return JSON array: [{\"area_name\":\"string\",\"monthly_rent\":number,\"estimated_distance_km\":number}]" },
+                    { role: "system", content: "Extract JSON array: [{\"area_name\":\"string\",\"monthly_rent\":number,\"estimated_distance_km\":number}]" },
                     { role: "user", content: `Work: ${userProfile.workplace}. Ads: ${inputs.join(" | ")}` }
                 ]
             })
@@ -115,64 +112,75 @@ window.runSmartAnalysis = async function () {
 
     } catch (err) {
         document.getElementById("loadingOverlay").style.display = "none";
-        alert("AI Processing Error.");
+        alert("AI connection issue. Retry.");
     }
 };
 
-// 4. RENDER UI (HEADER SUMMARY & Z-AI ANALYSIS)
+// 4. IMPROVED RENDERER (HEADER & FONT SIZING)
 function renderResultsUI(ranked) {
     const container = document.getElementById("resultsContainer");
     
+    // PREMIUM HEADER IMPROVISATION
     const summaryHeader = `
-        <div class="mb-6 bg-slate-900 text-white p-6 rounded-[2.5rem] shadow-2xl border-b-4 border-blue-600">
-            <div class="grid grid-cols-2 gap-4 mb-4 border-b border-slate-700 pb-4">
+        <div class="mb-8 bg-slate-900 text-white p-8 rounded-[3rem] shadow-2xl border-b-8 border-blue-600">
+            <div class="flex justify-between items-end mb-6 border-b border-slate-800 pb-6">
                 <div>
-                    <p class="text-[8px] font-black text-slate-500 uppercase tracking-widest">Workplace Location</p>
-                    <p class="text-lg font-black text-blue-400">${userProfile.workplace}</p>
+                    <p class="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] mb-1">Target Workplace</p>
+                    <p class="text-4xl font-black tracking-tighter text-white">${userProfile.workplace}</p>
                 </div>
                 <div class="text-right">
-                    <p class="text-[8px] font-black text-slate-500 uppercase tracking-widest">Net Salary</p>
-                    <p class="text-lg font-black">RM ${userProfile.salary}</p>
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">Monthly Salary</p>
+                    <p class="text-3xl font-black text-emerald-400">RM ${userProfile.salary}</p>
                 </div>
             </div>
-            <div class="grid grid-cols-3 gap-2 text-[9px] font-bold text-slate-300">
-                <div class="bg-slate-800 p-2 rounded-xl text-center">Commits: RM ${userProfile.commitments}</div>
-                <div class="bg-slate-800 p-2 rounded-xl text-center">Depo Budget: RM ${userProfile.depositBudget}</div>
-                <div class="bg-slate-800 p-2 rounded-xl text-center">Transport: ${userProfile.transportMode}</div>
+            <div class="grid grid-cols-3 gap-4">
+                <div class="bg-slate-800/50 p-4 rounded-2xl">
+                    <p class="text-[9px] font-bold text-slate-500 uppercase mb-1">Fixed Commits</p>
+                    <p class="text-sm font-black text-slate-200">RM ${userProfile.commitments}</p>
+                </div>
+                <div class="bg-slate-800/50 p-4 rounded-2xl">
+                    <p class="text-[9px] font-bold text-slate-500 uppercase mb-1">Depo Budget</p>
+                    <p class="text-sm font-black text-slate-200">RM ${userProfile.depositBudget}</p>
+                </div>
+                <div class="bg-slate-800/50 p-4 rounded-2xl">
+                    <p class="text-[9px] font-bold text-slate-500 uppercase mb-1">Transport</p>
+                    <p class="text-sm font-black text-slate-200">${userProfile.transportMode}</p>
+                </div>
             </div>
         </div>
     `;
 
-    const cards = `<div class="grid-ranking space-y-4">` + ranked.map((item, idx) => `
-        <div class="result-card p-6 bg-white border-2 ${idx === 0 ? 'border-emerald-500 shadow-xl' : 'border-slate-100'} rounded-[2.5rem]">
-            <div class="flex justify-between items-start mb-4">
-                <span class="bg-blue-600 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase">RANK #${idx + 1}</span>
-                <span class="status-tag ${item.status === 'PASSED' ? 'bg-green-100 text-green-700' : (item.status === 'RISK' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700')} font-black px-3 py-1 rounded-full text-[9px]">${item.status}</span>
+    const cards = `<div class="grid-ranking space-y-6">` + ranked.map((item, idx) => `
+        <div class="result-card p-8 bg-white border-2 ${idx === 0 ? 'border-emerald-500 shadow-2xl scale-[1.02]' : 'border-slate-100'} rounded-[3rem] transition-all">
+            <div class="flex justify-between items-start mb-6">
+                <span class="bg-blue-600 text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase">RANK #${idx + 1} · AD ${item.adIndex}</span>
+                <span class="status-tag ${item.status === 'PASSED' ? 'bg-green-100 text-green-700' : (item.status === 'RISK' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700')} font-black px-4 py-1.5 rounded-full text-[10px] shadow-sm">${item.status}</span>
             </div>
             
-            <h3 class="font-black text-xl text-slate-800 leading-tight mb-1">${item.area_name}</h3>
-            <p class="text-xs font-bold text-slate-400 mb-4">📍 ${item.estimated_distance_km}km from workplace</p>
+            <h3 class="font-black text-3xl text-slate-800 leading-none mb-2">${item.area_name}</h3>
+            <p class="text-sm font-bold text-slate-400 mb-6 italic">📍 ${item.estimated_distance_km}km from workplace</p>
 
-            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 mb-4">
-                <p class="text-[8px] font-black text-slate-500 uppercase mb-2 tracking-widest italic">Upfront Cost (Normal Depo 1+1)</p>
-                <div class="flex justify-between items-center text-sm font-black">
-                    <span class="text-slate-500">RM ${item.monthly_rent} + RM ${item.monthly_rent}</span>
-                    <span class="${item.depositRequired > userProfile.depositBudget ? 'text-red-600' : 'text-slate-800'}">RM ${item.depositRequired}</span>
+            <div class="bg-slate-50 p-5 rounded-[2rem] border border-slate-100 mb-6">
+                <p class="text-[10px] font-black text-slate-400 uppercase mb-3 tracking-widest">Initial 1+1 Deposit</p>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm font-bold text-slate-600">RM ${item.monthly_rent} + RM ${item.monthly_rent} =</span>
+                    <span class="text-xl font-black ${item.depositRequired > userProfile.depositBudget ? 'text-red-600' : 'text-slate-800'}">RM ${item.depositRequired}</span>
                 </div>
             </div>
 
-            <div class="mb-4 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-r-2xl">
-                <p class="text-[10px] font-bold text-blue-700 leading-relaxed">${item.zAiAnalysis}</p>
+            <div class="mb-6 p-5 bg-blue-50 border-l-8 border-blue-500 rounded-r-[2rem]">
+                <p class="text-xs font-black text-blue-700 leading-relaxed uppercase mb-1">Z.AI Analysis</p>
+                <p class="text-[13px] font-bold text-blue-900 leading-snug">${item.zAiAnalysis}</p>
             </div>
 
-            <div class="space-y-2 border-t border-dashed border-slate-200 pt-4">
-                <div class="flex justify-between text-xs font-bold text-slate-500">
-                    <span>Rent + Transport Cost</span>
+            <div class="space-y-3 border-t-2 border-dashed border-slate-100 pt-6">
+                <div class="flex justify-between text-sm font-bold text-slate-500">
+                    <span>Rent + Transport</span>
                     <span>RM ${item.monthly_rent} + RM ${item.transportCost}</span>
                 </div>
-                <div class="flex justify-between items-center mt-3 bg-blue-600 p-4 rounded-2xl text-white shadow-lg">
-                    <span class="text-[9px] font-black uppercase tracking-widest">Net Disposable Balance</span>
-                    <span class="text-2xl font-black">RM ${item.disposableIncome.toFixed(0)}</span>
+                <div class="flex justify-between items-center mt-4 bg-blue-600 p-6 rounded-[2.2rem] text-white shadow-xl">
+                    <span class="text-[10px] font-black uppercase tracking-widest">Monthly Balance</span>
+                    <span class="text-3xl font-black">RM ${item.disposableIncome.toFixed(0)}</span>
                 </div>
             </div>
         </div>
@@ -181,21 +189,24 @@ function renderResultsUI(ranked) {
     container.innerHTML = summaryHeader + cards;
 }
 
-// 5. CHAT ENGINE & UI ACTIONS
+// 5. CHAT SYNC ENGINE
 window.processChatCommand = function () {
     const input = document.getElementById("chatCommand");
     const cmd = input.value.trim().toLowerCase();
     const match = cmd.match(/ad\s*(\d+)\s*(?:rent|price|is|=|rm)?\s*(\d+)/);
+    
     if (match) {
         const adId = parseInt(match[1]);
         const newRent = parseFloat(match[2]);
         const idx = currentRankedAds.findIndex(p => p.adIndex === adId);
+        
         if (idx !== -1) {
             currentRankedAds[idx].monthly_rent = newRent;
-            Object.assign(currentRankedAds[idx], evaluateRentalOption(currentRankedAds[idx], userProfile));
+            // UPDATE WITH CHAT SYNC FLAG
+            Object.assign(currentRankedAds[idx], evaluateRentalOption(currentRankedAds[idx], userProfile, true));
             currentRankedAds.sort((a, b) => b.disposableIncome - a.disposableIncome);
             renderResultsUI(currentRankedAds);
-            typeAssistantMessage(`✅ AD ${adId} updated to RM ${newRent}. System recalculated.`);
+            typeAssistantMessage(`AD ${adId} updated to RM ${newRent}. Z.AI has updated the risk profile.`);
         }
     }
     input.value = "";
@@ -203,10 +214,10 @@ window.processChatCommand = function () {
 
 function typeAssistantMessage(msg) {
     const msgBox = document.getElementById("aiMessageBox");
-    const div = document.createElement("div");
-    div.className = "bg-blue-700 text-white text-[10px] font-bold p-3 rounded-2xl mb-2 shadow-md";
-    div.innerText = msg;
-    msgBox.prepend(div);
+    const d = document.createElement("div");
+    d.className = "bg-blue-800 text-white text-[11px] font-black p-4 rounded-3xl mb-2 shadow-lg animate-slideUp border-l-4 border-emerald-400";
+    d.innerText = msg;
+    msgBox.prepend(d);
 }
 
 window.closeResults = () => document.getElementById("resultOverlay").style.display = "none";
