@@ -3,81 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmartRent AI | Decision Engine</title>
-    <link rel="stylesheet" href="style.css">
+    <title>SmartRent AI | Decision Intelligence</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
 </head>
-<body class="p-4 pb-20">
+<body class="bg-[#f5f7fb] antialiased">
+    <div class="bg-glow"></div>
 
-    <div id="frontPage" class="max-w-md mx-auto space-y-6">
-        <header class="py-6">
-            <h1 class="text-4xl font-black text-slate-900 tracking-tighter">SmartRent <span class="text-blue-600">AI</span></h1>
-            <p class="text-slate-500 font-bold text-sm uppercase tracking-wider">Decision Intelligence Engine</p>
+    <div class="max-w-7xl mx-auto px-5 pt-10 pb-20">
+        <header class="flex justify-between items-center mb-12">
+            <div>
+                <h1 class="text-5xl font-black tracking-tighter text-slate-800">
+                    SmartRent <span class="text-blue-600">AI</span>
+                </h1>
+                <p class="text-[10px] font-bold text-slate-400 tracking-[0.2em] uppercase mt-1">
+                    Decision Intelligence · Real Living Cost
+                </p>
+            </div>
+            <div class="bg-white px-5 py-2 rounded-full text-[11px] font-black shadow-sm border border-slate-200">
+                PENGUIN_HACK_2026
+            </div>
         </header>
 
-        <div class="space-y-4">
-            <div class="grid grid-cols-2 gap-4">
-                <div class="space-y-1">
-                    <label class="text-[10px] font-black text-slate-400 uppercase">Monthly Salary</label>
-                    <input id="salary" type="number" class="input-field" placeholder="5000">
-                </div>
-                <div class="space-y-1">
-                    <label class="text-[10px] font-black text-slate-400 uppercase">Fixed Commits</label>
-                    <input id="commitments" type="number" class="input-field" placeholder="1200">
-                </div>
+        <div id="main-input-area" class="space-y-8">
+            <div class="grid lg:grid-cols-2 gap-8">
+                <section class="card-modern p-8">
+                    <span class="section-badge">💰 Financial Profile</span>
+                    <div class="space-y-6">
+                        <div>
+                            <label>Monthly Salary (RM)</label>
+                            <input type="number" id="salary" placeholder="e.g., 5000">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label>Fixed Bills (RM)</label>
+                                <input type="number" id="commitments" placeholder="e.g., 1200">
+                            </div>
+                            <div>
+                                <label>Deposit Budget (RM)</label>
+                                <input type="number" id="deposit_budget" placeholder="e.g., 3000">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="card-modern p-8">
+                    <span class="section-badge">🚗 Commute Logistics</span>
+                    <div class="space-y-6">
+                        <div>
+                            <label>Workplace (Landmark/Area)</label>
+                            <input type="text" id="workplace" placeholder="e.g., TRX, KLCC, Bangsar South">
+                        </div>
+                        <div>
+                            <label>Transport Mode</label>
+                            <select id="transport_mode">
+                                <option value="Car">🚗 Car / Motorcycle</option>
+                                <option value="Public Transport">🚆 Public Transport</option>
+                                <option value="Walk">🚶 Walking / Bicycle</option>
+                            </select>
+                        </div>
+                    </div>
+                </section>
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
-                <div class="space-y-1">
-                    <label class="text-[10px] font-black text-slate-400 uppercase">Depo Budget</label>
-                    <input id="deposit_budget" type="number" class="input-field" placeholder="1000">
+            <section class="card-modern p-8">
+                <div class="flex justify-between items-center mb-6">
+                    <span class="section-badge mb-0">📄 Rental Ads (Max 5)</span>
+                    <button onclick="addRentalAd()" class="text-blue-600 text-xs font-black bg-blue-50 px-5 py-2 rounded-full hover:bg-blue-100 transition">
+                        + ADD PROPERTY
+                    </button>
                 </div>
-                <div class="space-y-1">
-                    <label class="text-[10px] font-black text-slate-400 uppercase">Transport</label>
-                    <select id="transport_mode" class="input-field">
-                        <option value="Car">Car</option>
-                        <option value="Public Transport">Public Transport</option>
-                        <option value="Walk">Walk</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="space-y-1">
-                <label class="text-[10px] font-black text-slate-400 uppercase">Workplace (Area)</label>
-                <input id="workplace" type="text" class="input-field" placeholder="TRX, Kuala Lumpur">
-            </div>
-
-            <div class="pt-4 border-t border-slate-200">
-                <div class="flex justify-between items-center mb-4">
-                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Rental Ads (Max 5)</label>
-                    <button onclick="addRentalAd()" class="text-blue-600 font-black text-xs hover:underline">+ Add Ad</button>
-                </div>
-                <div id="ads-dynamic-list" class="space-y-2">
-                    <div class="ad-entry flex items-center gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-                        <span class="text-[12px] font-black text-slate-400 w-8">#01</span>
-                        <input class="ad-input flex-1 border-none bg-transparent outline-none text-sm font-bold text-slate-700" placeholder="Paste details here...">
+                <div id="ads-dynamic-list" class="space-y-4">
+                    <div class="ad-entry flex items-center gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                        <span class="text-[10px] font-black text-slate-400 w-8">#01</span>
+                        <input class="ad-input flex-1 border-none bg-transparent outline-none text-sm font-bold text-slate-700" 
+                               placeholder="Paste property link or details: 'Room in TRX RM1200, 2km from office'">
                     </div>
                 </div>
+                <p class="text-[10px] text-slate-400 mt-4 italic">✏️ Z.AI will extract price and distance automatically</p>
+            </section>
+        </div>
+
+        <div class="footer-dock">
+            <div class="flex gap-6 mb-2">
+                <button onclick="runSmartAnalysis()" class="btn-primary px-10 py-3 shadow-xl">
+                    ✨ Run Z.AI Engine
+                </button>
+                <button onclick="resetFullForm()" class="text-slate-400 text-xs font-bold hover:text-red-500">
+                    Reset All
+                </button>
             </div>
         </div>
 
-        <button onclick="runSmartAnalysis()" class="btn-primary w-full py-5 bg-blue-600 text-white rounded-[2rem] font-black text-lg shadow-xl shadow-blue-100 active:scale-95">
-            CALCULATE INTELLIGENCE
-        </button>
-    </div>
-
-    <div id="loadingOverlay" style="display:none;" class="fixed inset-0 bg-white/90 backdrop-blur-md z-[200] flex flex-col items-center justify-center">
-        <div class="loader mb-4"></div>
-        <p class="font-black text-slate-800 tracking-tight">Z.AI is analyzing your COL data...</p>
-    </div>
-
-    <div id="resultOverlay" style="display:none;" class="fixed inset-0 bg-white z-[100] flex flex-col">
-        <nav class="p-4 flex items-center border-b border-slate-100 bg-white">
-            <button onclick="closeResults()" class="bg-slate-100 px-6 py-2 rounded-full font-black text-xs text-slate-600 active:scale-90 transition-all uppercase">← Back to Inputs</button>
-        </nav>
-        
-        <div id="resultsContainer" class="flex-1 overflow-y-auto p-4 bg-slate-50">
+        <div id="loadingOverlay" class="overlay-panel" style="display: none;">
+            <div class="loader mb-6"></div>
+            <div class="font-black text-blue-600 text-sm tracking-widest animate-pulse uppercase">
+                Z.AI Calculating Real Cost Matrix...
             </div>
+        </div>
+
+        <div id="resultOverlay" class="overlay-panel" style="display: none;">
+            <div class="max-w-[95%] w-full">
+                <div class="flex justify-between items-center mb-8">
+                    <button onclick="closeResults()" class="text-blue-600 font-black text-sm bg-white px-6 py-3 rounded-full border border-slate-200 shadow-sm flex items-center gap-2">
+                        ← Modify Inputs
+                    </button>
+                    <button onclick="window.print()" class="text-emerald-600 font-black text-sm bg-white px-6 py-3 rounded-full border border-slate-200 shadow-sm">
+                        💾 Export PDF
+                    </button>
+                </div>
+                <div id="resultsContainer" class="w-full">
+                    </div>
+            </div>
+        </div>
     </div>
 
     <script src="script.js"></script>
