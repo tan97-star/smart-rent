@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>SmartRent AI | Rental Decision Intelligence</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="antialiased">
+    <div class="bg-glow"></div>
+
+    <div class="max-w-7xl mx-auto px-5 pt-7 pb-10">
+        <!-- header -->
+        <div class="flex justify-between items-center flex-wrap gap-3 mb-10">
+            <div>
+                <h1
+                    class="text-4xl font-black tracking-tighter bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
+                    SmartRent <span class="text-blue-600">AI</span></h1>
+                <p class="text-[10px] font-bold text-slate-400 tracking-[0.2em] uppercase mt-0.5">DECISION INTELLIGENCE
+                    · REAL LIVING COST</p>
+            </div>
+            <div
+                class="bg-white/70 backdrop-blur-sm px-4 py-1.5 rounded-full text-[11px] font-black shadow-sm border border-slate-200">
+                PENGUIN_HACK_2026</div>
+        </div>
+
+        <!-- main inputs (visible by default) -->
+        <div id="main-input-area" class="space-y-8">
+            <div class="grid lg:grid-cols-2 gap-7">
+                <!-- financial card -->
+                <div class="card-modern p-6">
+                    <div class="section-badge">💰 Financial Profile</div>
+                    <div class="space-y-5">
+                        <div>
+                            <label>Monthly Salary (RM)</label>
+                            <input type="number" id="salary" placeholder="e.g., 5500" class="w-full">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label>Fixed Commitments (RM)</label>
+                                <input type="number" id="commitments" placeholder="e.g., 1300">
+                            </div>
+                            <div>
+                                <label>Deposit Budget (RM)</label>
+                                <input type="number" id="deposit_budget" placeholder="e.g., 4000">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- commute card -->
+                <div class="card-modern p-6">
+                    <div class="section-badge">🚗 Commute Logistics</div>
+                    <div class="space-y-5">
+                        <div>
+                            <label>Workplace Location (Landmark / Area)</label>
+                            <input type="text" id="workplace" placeholder="e.g., KLCC, TRX, Bangsar South">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label>Transport Mode</label>
+                                <select id="transport_mode">
+                                    <option value="Car">🚗 Car / Motorcycle</option>
+                                    <option value="Public Transport">🚆 Public Transport (LRT/MRT)</option>
+                                    <option value="Walk">🚶 Walking / Bicycle</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>Max Distance (km)</label>
+                                <input type="number" id="max_distance" placeholder="e.g., 12" value="15">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- rental ads block -->
+            <div class="card-modern p-6">
+                <div class="flex justify-between items-center flex-wrap mb-5">
+                    <div class="section-badge mb-0">📄 Rental Ads (max 5)</div>
+                    <button type="button" onclick="addRentalAd()"
+                        class="text-blue-600 text-xs font-black bg-blue-50 px-4 py-1.5 rounded-full hover:bg-blue-100 transition">+
+                        ADD AD</button>
+                </div>
+                <div id="ads-dynamic-list" class="space-y-3">
+                    <div class="ad-entry flex items-center gap-3 bg-slate-50/80 p-3 rounded-xl border border-slate-100">
+                        <span class="text-[11px] font-black text-slate-500 w-8">AD 1</span>
+                        <input class="ad-input flex-1 border-none bg-transparent outline-none text-sm font-medium"
+                            placeholder="Paste property link or details: 'Room in Mont Kiara RM1100, 4km from KLCC'">
+                    </div>
+                </div>
+                <p class="text-[10px] text-slate-400 mt-3 italic">✏️ AI will extract rent & distance automatically</p>
+            </div>
+        </div>
+
+        <!-- footer dock + chat -->
+        <div class="footer-dock">
+            <div class="flex gap-5 mb-1">
+                <button type="button" onclick="runSmartAnalysis()" class="btn-primary px-7 py-2.5">✨ Calculate
+                    Options</button>
+                <button type="button" onclick="resetFullForm()"
+                    class="text-slate-500 text-xs font-bold hover:text-red-600 transition">Reset All</button>
+            </div>
+            <div class="chat-wrapper">
+                <input type="text" id="chatCommand" class="chat-input"
+                    placeholder='Try: "AD 2 rent is 950" or "AD 1 price = 1300"'>
+                <div onclick="processChatCommand()" class="chat-send">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- loading overlay -->
+        <div id="loadingOverlay" class="overlay-panel" style="display: none;">
+            <div class="loader mb-5"></div>
+            <div class="font-black text-blue-600 text-sm tracking-widest animate-pulse">Z.AI ANALYZING FINANCIAL
+                IMPACT...</div>
+            <p class="text-slate-400 text-xs mt-3">computing commute + living cost matrix</p>
+        </div>
+
+        <!-- result overlay -->
+        <div id="resultOverlay" class="overlay-panel" style="display: none;">
+            <div class="max-w-6xl w-full">
+                <button type="button" onclick="closeResults()"
+                    class="mb-6 text-blue-600 font-black text-sm hover:translate-x-[-4px] transition inline-flex items-center gap-1 bg-white/70 px-4 py-2 rounded-full border border-slate-200 shadow-sm">←
+                    Back to Inputs</button>
+                <div id="resultsContainer" class="space-y-6"></div>
+                <div id="aiMessageBox" class="mt-8 max-w-2xl"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
