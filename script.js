@@ -1,6 +1,6 @@
 /**
- * SMARTRENT AI | VERSION 4.3.0
- * FIX: Chat box update synchronization for 1+1 Deposit & Status
+ * SMARTRENT AI | VERSION 5.0.0 (SYSTEM ANALYSIS VERSION)
+ * FEATURE: Detailed Profile Header & Z.AI Smart System Analysis
  */
 
 let adCounter = 1;
@@ -17,42 +17,59 @@ window.addRentalAd = function () {
     div.className = "ad-entry flex items-center gap-3 bg-slate-50/80 p-3 rounded-xl border border-slate-100 mb-2";
     div.innerHTML = `
         <span class="text-[10px] font-black text-slate-400 w-8">#0${adCounter}</span>
-        <input class="ad-input flex-1 border-none bg-transparent outline-none text-sm font-medium" placeholder="Paste details here...">
+        <input class="ad-input flex-1 border-none bg-transparent outline-none text-sm font-medium" placeholder="Paste listing details...">
         <button onclick="this.parentElement.remove(); adCounter--;" class="text-red-400 hover:text-red-600 text-xs font-bold">✕</button>
     `;
     container.appendChild(div);
 };
 
-// 2. CORE EVALUATION ENGINE
+// 2. CORE EVALUATION ENGINE (3 TRANSPORT MODES)
 function evaluateRentalOption(propertyRaw, profile) {
     const rent = parseFloat(propertyRaw.monthly_rent) || 0;
     const distance = parseFloat(propertyRaw.estimated_distance_km) || 0;
     
-    let transportCost = 20;
+    // TRANSPORTATION LOGIC (3 CONDITIONS)
+    let transportCost = 0;
     if (profile.transportMode === "Car") {
-        transportCost = Math.round(distance * 0.65 * 2 * 22 + 70); 
+        transportCost = Math.round(distance * 0.65 * 2 * 22 + 70); // Fuel + Toll + Parking
     } else if (profile.transportMode === "Public Transport") {
-        transportCost = Math.round(Math.min(11, distance * 0.45 + 2) * 22);
+        transportCost = Math.round(Math.min(11, distance * 0.45 + 2) * 22); // My50/LRT logic
+    } else if (profile.transportMode === "Walk") {
+        transportCost = 20; // Maintenance (Shoes/Umbrella)
     }
 
-    const totalCost = rent + transportCost + profile.commitments;
-    const balance = profile.salary - totalCost;
-    const depositRequired = rent * 2; // NORMAL DEPO 1+1 LOGIC
+    const totalMonthlyCost = rent + transportCost + profile.commitments;
+    const balance = profile.salary - totalMonthlyCost;
+    const deposit1plus1 = rent * 2; // NORMAL DEPO 1+1
 
-    let status = "PASSED";
-    if (balance < 550) status = "RISK";
-    else if ((rent / profile.salary) > 0.35) status = "CAUTION";
-    else if (depositRequired > profile.depositBudget) status = "CAUTION";
+    // Z-AI SYSTEM ANALYSIS LOGIC
+    let aiStatus = "PASSED";
+    let aiComment = "";
+
+    if (balance < 500) {
+        aiStatus = "RISK";
+        aiComment = "Z.AI: Critical financial risk. Living costs consume too much of your buffer.";
+    } else if (deposit1plus1 > profile.depositBudget) {
+        aiStatus = "CAUTION";
+        aiComment = "Z.AI: Deposit barrier detected. You need RM " + (deposit1plus1 - profile.depositBudget) + " more for the upfront 1+1 payment.";
+    } else if (rent > (profile.salary * 0.35)) {
+        aiStatus = "CAUTION";
+        aiComment = "Z.AI: Rent exceeds 35% rule. Sustainable, but limits your savings potential.";
+    } else {
+        aiStatus = "PASSED";
+        aiComment = "Z.AI: Optimal choice. High disposable buffer maintained for your lifestyle.";
+    }
 
     return {
         ...propertyRaw,
         monthly_rent: rent,
         estimated_distance_km: distance,
         transportCost,
-        totalLivingCost: totalCost,
+        totalLivingCost: totalMonthlyCost,
         disposableIncome: Math.max(0, balance),
-        depositRequired: depositRequired,
-        status,
+        depositRequired: deposit1plus1,
+        status: aiStatus,
+        zAiAnalysis: aiComment,
         adIndex: propertyRaw.adIndex
     };
 }
@@ -68,7 +85,7 @@ window.runSmartAnalysis = async function () {
     };
 
     const inputs = Array.from(document.querySelectorAll(".ad-input")).map(i => i.value).filter(v => v);
-    if (!userProfile.salary || !userProfile.workplace || inputs.length === 0) return alert("Complete all fields.");
+    if (!userProfile.salary || !userProfile.workplace || inputs.length === 0) return alert("Fill all fields.");
 
     document.getElementById("loadingOverlay").style.display = "flex";
 
@@ -79,7 +96,7 @@ window.runSmartAnalysis = async function () {
                 model: "ilmu-glm-5.1",
                 messages: [
                     { role: "system", content: "Return JSON array: [{\"area_name\":\"string\",\"monthly_rent\":number,\"estimated_distance_km\":number}]" },
-                    { role: "user", content: `Workplace: ${userProfile.workplace}. Ads: ${inputs.join(" | ")}` }
+                    { role: "user", content: `Work: ${userProfile.workplace}. Ads: ${inputs.join(" | ")}` }
                 ]
             })
         });
@@ -102,94 +119,59 @@ window.runSmartAnalysis = async function () {
     }
 };
 
-// 4. FIXED CHAT COMMAND (SYNCED WITH EVALUATION)
-window.processChatCommand = function () {
-    const input = document.getElementById("chatCommand");
-    const cmd = input.value.trim().toLowerCase();
-    
-    // Support "ad 1 rent 800" or "ad 2 = 900"
-    const match = cmd.match(/ad\s*(\d+)\s*(?:rent|price|is|=|rm)?\s*(\d+)/);
-    
-    if (match) {
-        const adId = parseInt(match[1]);
-        const newRent = parseFloat(match[2]);
-        
-        // Find index in current global array
-        const idx = currentRankedAds.findIndex(p => p.adIndex === adId);
-        
-        if (idx !== -1) {
-            // 1. Update the raw rent value
-            currentRankedAds[idx].monthly_rent = newRent;
-            
-            // 2. Re-run through engine to update deposit, balance, and status
-            const updatedData = evaluateRentalOption(currentRankedAds[idx], userProfile);
-            
-            // 3. Merge updated data back to array
-            currentRankedAds[idx] = updatedData;
-            
-            // 4. Re-sort based on NEW disposable income
-            currentRankedAds.sort((a, b) => b.disposableIncome - a.disposableIncome);
-            
-            // 5. Re-render UI
-            renderResultsUI(currentRankedAds);
-            typeAssistantMessage(`✅ AD ${adId} updated to RM ${newRent}. Initial cost and rankings recalculated.`);
-        } else {
-            typeAssistantMessage(`⚠️ AD ${adId} not found in current results.`);
-        }
-    } else {
-        typeAssistantMessage("⚠️ Try: 'AD 1 rent 850'");
-    }
-    input.value = "";
-};
-
-// 5. RENDER UI
+// 4. RENDER UI (HEADER SUMMARY & Z-AI ANALYSIS)
 function renderResultsUI(ranked) {
     const container = document.getElementById("resultsContainer");
     
     const summaryHeader = `
-        <div class="mb-6 bg-slate-900 text-white p-5 rounded-[2.5rem] shadow-2xl">
-            <div class="flex justify-between items-center border-b border-slate-700 pb-3 mb-3">
+        <div class="mb-6 bg-slate-900 text-white p-6 rounded-[2.5rem] shadow-2xl border-b-4 border-blue-600">
+            <div class="grid grid-cols-2 gap-4 mb-4 border-b border-slate-700 pb-4">
                 <div>
-                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Workplace Location</p>
-                    <p class="text-lg font-black text-emerald-400">${userProfile.workplace}</p>
+                    <p class="text-[8px] font-black text-slate-500 uppercase tracking-widest">Workplace Location</p>
+                    <p class="text-lg font-black text-blue-400">${userProfile.workplace}</p>
                 </div>
                 <div class="text-right">
-                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Available Deposit</p>
-                    <p class="text-lg font-black">RM ${userProfile.depositBudget}</p>
+                    <p class="text-[8px] font-black text-slate-500 uppercase tracking-widest">Net Salary</p>
+                    <p class="text-lg font-black">RM ${userProfile.salary}</p>
                 </div>
             </div>
-            <div class="flex justify-between text-[10px] font-bold text-slate-400 uppercase">
-                <span>Salary: RM ${userProfile.salary}</span>
-                <span>Commits: RM ${userProfile.commitments}</span>
+            <div class="grid grid-cols-3 gap-2 text-[9px] font-bold text-slate-300">
+                <div class="bg-slate-800 p-2 rounded-xl text-center">Commits: RM ${userProfile.commitments}</div>
+                <div class="bg-slate-800 p-2 rounded-xl text-center">Depo Budget: RM ${userProfile.depositBudget}</div>
+                <div class="bg-slate-800 p-2 rounded-xl text-center">Transport: ${userProfile.transportMode}</div>
             </div>
         </div>
     `;
 
     const cards = `<div class="grid-ranking space-y-4">` + ranked.map((item, idx) => `
-        <div class="result-card p-6 bg-white border-2 ${idx === 0 ? 'border-emerald-500 shadow-emerald-100 shadow-lg' : 'border-slate-100'} rounded-[2.5rem] transition-all duration-500">
+        <div class="result-card p-6 bg-white border-2 ${idx === 0 ? 'border-emerald-500 shadow-xl' : 'border-slate-100'} rounded-[2.5rem]">
             <div class="flex justify-between items-start mb-4">
-                <span class="bg-blue-600 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-tighter">RANK #${idx + 1} · AD ${item.adIndex}</span>
+                <span class="bg-blue-600 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase">RANK #${idx + 1}</span>
                 <span class="status-tag ${item.status === 'PASSED' ? 'bg-green-100 text-green-700' : (item.status === 'RISK' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700')} font-black px-3 py-1 rounded-full text-[9px]">${item.status}</span>
             </div>
+            
             <h3 class="font-black text-xl text-slate-800 leading-tight mb-1">${item.area_name}</h3>
             <p class="text-xs font-bold text-slate-400 mb-4">📍 ${item.estimated_distance_km}km from workplace</p>
-            
+
             <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 mb-4">
-                <p class="text-[9px] font-black text-slate-500 uppercase mb-2 tracking-widest">Normal Depo (1+1)</p>
-                <div class="flex justify-between items-center">
-                    <span class="text-xs font-bold text-slate-600">RM ${item.monthly_rent} + RM ${item.monthly_rent} =</span>
-                    <span class="text-base font-black ${item.depositRequired > userProfile.depositBudget ? 'text-red-600' : 'text-slate-800'}">RM ${item.depositRequired}</span>
+                <p class="text-[8px] font-black text-slate-500 uppercase mb-2 tracking-widest italic">Upfront Cost (Normal Depo 1+1)</p>
+                <div class="flex justify-between items-center text-sm font-black">
+                    <span class="text-slate-500">RM ${item.monthly_rent} + RM ${item.monthly_rent}</span>
+                    <span class="${item.depositRequired > userProfile.depositBudget ? 'text-red-600' : 'text-slate-800'}">RM ${item.depositRequired}</span>
                 </div>
-                ${item.depositRequired > userProfile.depositBudget ? `<p class="text-[8px] text-red-500 font-black mt-1 uppercase tracking-tighter">⚠️ Over Deposit Budget by RM ${item.depositRequired - userProfile.depositBudget}</p>` : ''}
+            </div>
+
+            <div class="mb-4 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-r-2xl">
+                <p class="text-[10px] font-bold text-blue-700 leading-relaxed">${item.zAiAnalysis}</p>
             </div>
 
             <div class="space-y-2 border-t border-dashed border-slate-200 pt-4">
                 <div class="flex justify-between text-xs font-bold text-slate-500">
-                    <span>Rent + Transport</span>
+                    <span>Rent + Transport Cost</span>
                     <span>RM ${item.monthly_rent} + RM ${item.transportCost}</span>
                 </div>
-                <div class="flex justify-between items-center mt-3 bg-blue-600 p-4 rounded-2xl text-white shadow-md">
-                    <span class="text-[9px] font-black uppercase tracking-widest">Monthly Balance</span>
+                <div class="flex justify-between items-center mt-3 bg-blue-600 p-4 rounded-2xl text-white shadow-lg">
+                    <span class="text-[9px] font-black uppercase tracking-widest">Net Disposable Balance</span>
                     <span class="text-2xl font-black">RM ${item.disposableIncome.toFixed(0)}</span>
                 </div>
             </div>
@@ -199,14 +181,34 @@ function renderResultsUI(ranked) {
     container.innerHTML = summaryHeader + cards;
 }
 
+// 5. CHAT ENGINE & UI ACTIONS
+window.processChatCommand = function () {
+    const input = document.getElementById("chatCommand");
+    const cmd = input.value.trim().toLowerCase();
+    const match = cmd.match(/ad\s*(\d+)\s*(?:rent|price|is|=|rm)?\s*(\d+)/);
+    if (match) {
+        const adId = parseInt(match[1]);
+        const newRent = parseFloat(match[2]);
+        const idx = currentRankedAds.findIndex(p => p.adIndex === adId);
+        if (idx !== -1) {
+            currentRankedAds[idx].monthly_rent = newRent;
+            Object.assign(currentRankedAds[idx], evaluateRentalOption(currentRankedAds[idx], userProfile));
+            currentRankedAds.sort((a, b) => b.disposableIncome - a.disposableIncome);
+            renderResultsUI(currentRankedAds);
+            typeAssistantMessage(`✅ AD ${adId} updated to RM ${newRent}. System recalculated.`);
+        }
+    }
+    input.value = "";
+};
+
 function typeAssistantMessage(msg) {
     const msgBox = document.getElementById("aiMessageBox");
     const div = document.createElement("div");
-    div.className = "bg-blue-700 text-white text-[10px] font-bold p-3 rounded-2xl mb-2 shadow-md animate-pulse";
+    div.className = "bg-blue-700 text-white text-[10px] font-bold p-3 rounded-2xl mb-2 shadow-md";
     div.innerText = msg;
     msgBox.prepend(div);
 }
 
-window.closeResults = () => { document.getElementById("resultOverlay").style.display = "none"; };
+window.closeResults = () => document.getElementById("resultOverlay").style.display = "none";
 window.resetFullForm = () => location.reload();
 document.addEventListener('keypress', (e) => { if (e.key === 'Enter' && document.activeElement.id === 'chatCommand') processChatCommand(); });
