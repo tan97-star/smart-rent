@@ -174,3 +174,45 @@ label {
         padding: 0;
     }
 }
+
+/* --- Optimized Print Logic for SmartRent AI --- */
+@media print {
+    /* 1. Hide all UI elements that aren't part of the report */
+    nav, button, .bg-glow, #loadingOverlay, .footer-dock {
+        display: none !important;
+    }
+
+    /* 2. Reset layout for physical paper */
+    body {
+        background: white !important;
+        padding: 0 !important;
+    }
+
+    .overlay-panel {
+        position: relative !important;
+        display: block !important;
+        background: white !important;
+        padding: 0 !important;
+    }
+
+    /* 3. Force Grid to 1-Column so cards fit the page width */
+    #resultsContainer .grid {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 20px !important;
+    }
+
+    /* 4. Remove hover scales & ensure cards don't split across pages */
+    .card-modern, [class*="p-4"], [class*="p-5"] {
+        transform: none !important; /* Removes the scale-[1.03] from JS */
+        break-inside: avoid; /* Prevents a card from cutting in half between pages */
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: none !important;
+    }
+
+    /* 5. Set physical margins */
+    @page {
+        margin: 1.5cm;
+        size: auto;
+    }
+}
