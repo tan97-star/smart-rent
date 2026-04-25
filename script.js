@@ -1,8 +1,8 @@
 /**
  * ============================================================
  * SMARTRENT AI | DECISION INTELLIGENCE ENGINE
- * VERSION : 13.5.0 (FINAL GEMINI DEPLOYMENT)
- * CORE REASONING: GOOGLE GEMINI 1.5 FLASH (VIA PROXY)
+ * VERSION : 13.5.0 (FULL PRODUCTION)
+ * CORE REASONING: Z.AI GLM (ilmu-glm-5.1)
  * DEVELOPER : TANIA DANISHA PUTERI
  * ============================================================
  */
@@ -19,8 +19,8 @@ let userProfile = {
     maxDistance: 15
 };
 
-// URL /exec GEMINI PROXY KAU
-const GOOGLE_PROXY_URL = "https://script.google.com/macros/s/AKfycbwJltI3EmbidVUrG0LVnbfze-OSJTTUrcUKi_gTzH-qgniyu3EciGtRposPBvqEp8Zkpw/exec";
+// Bridge: Google Apps Script Proxy for Z.AI GLM
+const GOOGLE_PROXY_URL = "https://script.google.com/macros/s/AKfycbxqbEdjRiept1Sk9C89OACVK_UCJ62B78bowUA7TqgMCGb1iaEV8oeogGjpP7G6S0kUqw/exec";
 
 /**
  * 1. DYNAMIC UI: RENTAL AD INPUTS
@@ -54,12 +54,13 @@ function evaluateRentalOption(propertyRaw, profile, isChatUpdate = false) {
     const rent = parseFloat(propertyRaw.monthly_rent) || 0;
     const distance = parseFloat(propertyRaw.estimated_distance_km) || 0;
     
+    // 3-MODE TRANSPORT LOGIC
     let transportCost = 0;
     if (profile.transportMode === "Car") {
-        // Formula: distance * 0.65 * 2 * 22 days + RM70 maintenance
-        transportCost = Math.round(distance * 0.65 * 2 * 22 + 70);
+        // $transportCost = \text{round}(distance \times 0.65 \times 2 \times 22 + 70)$
+        transportCost = Math.round(distance * 0.65 * 2 * 22 + 70); 
     } else if (profile.transportMode === "Public Transport") {
-        // Formula: min(RM11 capped daily, dist * 0.45 + 2) * 22 days
+        // $transportCost = \text{round}(\min(11, distance \times 0.45 + 2) \times 22)$
         transportCost = Math.round(Math.min(11, distance * 0.45 + 2) * 22);
     } else if (profile.transportMode === "Walk") {
         transportCost = 20;
@@ -69,10 +70,11 @@ function evaluateRentalOption(propertyRaw, profile, isChatUpdate = false) {
     const leftover = profile.salary - totalCOL;
     const depositRequired = rent * 2;
 
+    // SUSTAINABILITY & DECISION LOGIC
     let status = "PASSED";
     let advice = isChatUpdate ? "Z.AI: Intelligence re-calculated via intent parsing." : "Z.AI: Optimal match found based on your profile.";
 
-    if (leftover < 550) {
+    if (leftover < 550) { // Safety buffer RM 550
         status = "RISK";
         advice = "Z.AI: High Risk! Disposable income is below the RM 550 safety buffer.";
     } else if (distance > profile.maxDistance) {
@@ -115,8 +117,12 @@ window.runSmartAnalysis = async function () {
     const adInputs = Array.from(document.querySelectorAll(".ad-input"))
         .map(inp => inp.value.trim()).filter(v => v !== "");
 
-    if (!userProfile.salary || adInputs.length === 0) {
-        alert("Sila masukkan Gaji dan sekurang-kurangnya satu Iklan.");
+    // Token Management: Truncate to ensure LLM stability
+    const MAX_CHARS = 6000; 
+    const safeAds = adInputs.map(input => input.substring(0, MAX_CHARS));
+
+    if (!userProfile.salary || safeAds.length === 0) {
+        alert("System Validation: Please provide Salary and at least 1 Advertisement.");
         return;
     }
 
@@ -126,21 +132,16 @@ window.runSmartAnalysis = async function () {
         const res = await fetch(GOOGLE_PROXY_URL, {
             method: "POST",
             body: JSON.stringify({
-                model: "gemini-1.5-flash",
+                model: "ilmu-glm-5.1",
                 messages: [
-                    { 
-                        role: "system", 
-                        content: "Extract rental data. Return JSON array ONLY: [{\"area_name\":\"string\",\"monthly_rent\":number,\"estimated_distance_km\":number}]" 
-                    },
-                    { role: "user", content: `Workplace: ${userProfile.workplace}. Ads: ${adInputs.join(" | ")}` }
+                    { role: "system", content: "Extract rental data. Return JSON array ONLY: [{\"area_name\":\"string\",\"monthly_rent\":number,\"estimated_distance_km\":number}]" },
+                    { role: "user", content: `Workplace: ${userProfile.workplace}. Ads: ${safeAds.join(" | ")}` }
                 ]
             })
         });
 
-        const rawText = await res.text();
-        const data = JSON.parse(rawText);
-        
-        const jsonMatch = data.choices[0].message.content.match(/\[[\s\S]*\]/);
+        const data = await res.json();
+        const jsonMatch = data.choices[0].message.content.match(/\[.*\]/s);
         const parsed = JSON.parse(jsonMatch[0]);
 
         currentRankedAds = parsed.map((item, i) => evaluateRentalOption({...item, adIndex: i+1}, userProfile));
@@ -153,8 +154,7 @@ window.runSmartAnalysis = async function () {
 
     } catch (err) {
         document.getElementById("loadingOverlay").style.display = "none";
-        alert("Z.AI Error: Sila pendekkan iklan atau cuba lagi.");
-        console.error(err);
+        alert("Z.AI Error: Sila paste TEKS iklan penuh, bukan link.");
     }
 };
 
@@ -166,19 +166,19 @@ window.processChatCommand = async function () {
     const cmd = input.value.trim();
     if (!cmd) return;
 
-    typeAssistantMessage("Analyzing intent...");
+    typeAssistantMessage("Analyzing your intent...");
 
     try {
         const res = await fetch(GOOGLE_PROXY_URL, {
             method: "POST",
             body: JSON.stringify({
-                model: "gemini-1.5-flash",
+                model: "ilmu-glm-5.1",
                 messages: [
                     { 
                         role: "system", 
-                        content: "Identify intent. Return JSON ONLY: {\"target\": \"ad\"|\"profile\", \"index\": number|null, \"key\": \"monthly_rent\"|\"salary\"|\"estimated_distance_km\"|\"commitments\"|\"maxDistance\", \"value\": number}" 
+                        content: "Identify user intent for data update. Return JSON ONLY: {\"target\": \"ad\"|\"profile\", \"index\": number|null, \"key\": \"monthly_rent\"|\"salary\"|\"estimated_distance_km\"|\"commitments\"|\"maxDistance\", \"value\": number}" 
                     },
-                    { role: "user", content: `Command: "${cmd}". Context: Salary ${userProfile.salary}, Ads 1-${currentRankedAds.length}.` }
+                    { role: "user", content: `Command: "${cmd}". Current Context: Salary ${userProfile.salary}, MaxDist ${userProfile.maxDistance}. Ads 1 to ${currentRankedAds.length}.` }
                 ]
             })
         });
@@ -203,13 +203,13 @@ window.processChatCommand = async function () {
         renderResultsUI(currentRankedAds);
 
     } catch (err) {
-        typeAssistantMessage("Parsing failed. Try: 'AD 1 rent 1500'");
+        typeAssistantMessage("I couldn't parse that command. Try: 'AD 1 distance 5km' or 'Salary 6000'");
     }
     input.value = "";
 };
 
 /**
- * 5. SIDE-BY-SIDE RENDERER
+ * 5. COMPACT SIDE-BY-SIDE RENDERER
  */
 function renderResultsUI(ranked) {
     const container = document.getElementById("resultsContainer");
@@ -277,10 +277,7 @@ function typeAssistantMessage(msg) {
     box.prepend(div);
 }
 
-window.closeResults = () => { 
-    document.getElementById("resultOverlay").style.display = "none";
-    document.body.style.overflow = "auto";
-};
+window.closeResults = () => { document.getElementById("resultOverlay").style.display = "none"; document.body.style.overflow = "auto"; };
 
 document.addEventListener('keypress', (e) => { 
     if (e.key === 'Enter' && document.activeElement.id === 'chatCommand') {
