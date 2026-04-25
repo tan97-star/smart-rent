@@ -20,7 +20,8 @@ let userProfile = {
 };
 
 // Bridge: Google Apps Script Proxy for Z.AI GLM
-const GOOGLE_PROXY_URL = "https://script.google.com/macros/s/AKfycbyTlrixa43Psv9xyybmKi7qkF4dyJRavltMmMkzfXwSF3hQqAoGhW-WQuPvzynUDRDVEQ/exec";
+const GOOGLE_PROXY_URL = "https://script.google.com/macros/s/AKfycbw21jb0DCoe4lRGg9smmX5EWi2cKTX-SAsp7j81IySe_ErFjqDSBhL91U1d0lV-QrZy-g/exec";
+
 
 /**
  * 1. DYNAMIC UI: RENTAL AD INPUTS
