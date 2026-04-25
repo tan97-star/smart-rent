@@ -1,8 +1,8 @@
 /**
  * ============================================================
  * SMARTRENT AI | DECISION INTELLIGENCE ENGINE
- * VERSION : 13.5.0 (FULL PRODUCTION + CHAT ENABLED)
- * CORE REASONING: Z.AI GLM (ilmu-glm-5.1)
+ * VERSION : 13.5.0 (FINAL GEMINI DEPLOYMENT)
+ * CORE REASONING: GOOGLE GEMINI 1.5 FLASH (VIA PROXY)
  * DEVELOPER : TANIA DANISHA PUTERI
  * ============================================================
  */
@@ -19,8 +19,8 @@ let userProfile = {
     maxDistance: 15
 };
 
-// URL /exec TERBARU YANG KAU BAGI TADI
-const GOOGLE_PROXY_URL = "https://script.google.com/macros/s/AKfycbzvblNhnvXsaQrueqPTabC_OiENg_5U6SKU9DtYgiLG8sb5g16zlYj6IqEdFsqs1rMd5A/exec";
+// URL /exec GEMINI PROXY KAU
+const GOOGLE_PROXY_URL = "https://script.google.com/macros/s/AKfycbwJltI3EmbidVUrG0LVnbfze-OSJTTUrcUKi_gTzH-qgniyu3EciGtRposPBvqEp8Zkpw/exec";
 
 /**
  * 1. DYNAMIC UI: RENTAL AD INPUTS
@@ -56,8 +56,10 @@ function evaluateRentalOption(propertyRaw, profile, isChatUpdate = false) {
     
     let transportCost = 0;
     if (profile.transportMode === "Car") {
+        // Formula: distance * 0.65 * 2 * 22 days + RM70 maintenance
         transportCost = Math.round(distance * 0.65 * 2 * 22 + 70);
     } else if (profile.transportMode === "Public Transport") {
+        // Formula: min(RM11 capped daily, dist * 0.45 + 2) * 22 days
         transportCost = Math.round(Math.min(11, distance * 0.45 + 2) * 22);
     } else if (profile.transportMode === "Walk") {
         transportCost = 20;
@@ -114,7 +116,7 @@ window.runSmartAnalysis = async function () {
         .map(inp => inp.value.trim()).filter(v => v !== "");
 
     if (!userProfile.salary || adInputs.length === 0) {
-        alert("Sila isi Gaji dan sekurang-kurangnya 1 Iklan.");
+        alert("Sila masukkan Gaji dan sekurang-kurangnya satu Iklan.");
         return;
     }
 
@@ -124,11 +126,11 @@ window.runSmartAnalysis = async function () {
         const res = await fetch(GOOGLE_PROXY_URL, {
             method: "POST",
             body: JSON.stringify({
-                model: "ilmu-glm-5.1",
+                model: "gemini-1.5-flash",
                 messages: [
                     { 
                         role: "system", 
-                        content: "Return JSON array ONLY: [{\"area_name\":\"string\",\"monthly_rent\":number,\"estimated_distance_km\":number}]" 
+                        content: "Extract rental data. Return JSON array ONLY: [{\"area_name\":\"string\",\"monthly_rent\":number,\"estimated_distance_km\":number}]" 
                     },
                     { role: "user", content: `Workplace: ${userProfile.workplace}. Ads: ${adInputs.join(" | ")}` }
                 ]
@@ -151,13 +153,13 @@ window.runSmartAnalysis = async function () {
 
     } catch (err) {
         document.getElementById("loadingOverlay").style.display = "none";
-        alert("Z.AI Error: Sila cuba lagi atau pendekkan iklan.");
+        alert("Z.AI Error: Sila pendekkan iklan atau cuba lagi.");
         console.error(err);
     }
 };
 
 /**
- * 4. AI-DRIVEN CONVERSATIONAL EDITING (CHAT FEATURE!)
+ * 4. AI-DRIVEN CONVERSATIONAL EDITING
  */
 window.processChatCommand = async function () {
     const input = document.getElementById("chatCommand");
@@ -170,7 +172,7 @@ window.processChatCommand = async function () {
         const res = await fetch(GOOGLE_PROXY_URL, {
             method: "POST",
             body: JSON.stringify({
-                model: "ilmu-glm-5.1",
+                model: "gemini-1.5-flash",
                 messages: [
                     { 
                         role: "system", 
@@ -201,13 +203,13 @@ window.processChatCommand = async function () {
         renderResultsUI(currentRankedAds);
 
     } catch (err) {
-        typeAssistantMessage("I couldn't parse that. Try: 'AD 1 rent 1500'");
+        typeAssistantMessage("Parsing failed. Try: 'AD 1 rent 1500'");
     }
     input.value = "";
 };
 
 /**
- * 5. COMPACT SIDE-BY-SIDE RENDERER
+ * 5. SIDE-BY-SIDE RENDERER
  */
 function renderResultsUI(ranked) {
     const container = document.getElementById("resultsContainer");
